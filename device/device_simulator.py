@@ -68,8 +68,9 @@ def main():
     with open(path_to_key, 'r') as f:
         private_key = f.read()
 
-    # Loop and respond to button presses
+    # jwt is kept outside of the loop to check for renewals
     current_jwt = None
+    
     # Data is completely arbitrary for button press
     data = "1"
 
