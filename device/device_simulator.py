@@ -63,14 +63,14 @@ def main():
     path_to_key = os.environ["PATH_TO_KEY"]
     device_path = 'projects/{}/locations/{}/registries/{}/devices/{}'.format(project_id, region, registry_id, device_id)
 
-    # Read the Service Account JSON file
+    # Read the private key pem file
     path_to_key = os.path.join(os.path.dirname(__file__), path_to_key)
     with open(path_to_key, 'r') as f:
         private_key = f.read()
 
     # jwt is kept outside of the loop to check for renewals
     current_jwt = None
-    
+
     # Data is completely arbitrary for button press
     data = "1"
 
