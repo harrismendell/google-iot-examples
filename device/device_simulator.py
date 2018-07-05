@@ -1,6 +1,6 @@
 import requests
 import base64
-import datetime
+from datetime import datetime, timedelta
 import json
 import time
 import jwt
@@ -11,12 +11,12 @@ current_jwt_exp = None
 def get_or_renew_jwt(current_jwt, private_key, project_id):
     global current_jwt_exp
     if current_jwt:
-        if current_jwt_exp > datetime.datetime.utcnow():
+        if current_jwt_exp > datetime.utcnow():
             return current_jwt
 
     print("JWT is expired or does not exist, renewing")
-    jwt_iat = datetime.datetime.utcnow()
-    current_jwt_exp = jwt_iat + datetime.timedelta(minutes=60)
+    jwt_iat = datetime.utcnow()
+    current_jwt_exp = jwt_iat + timedelta(minutes=60)
     token = {
         'iat': jwt_iat,
         'exp': current_jwt_exp,
@@ -25,6 +25,10 @@ def get_or_renew_jwt(current_jwt, private_key, project_id):
     return jwt.encode(token, private_key, algorithm='RS256').decode('ascii')
 
 def publish_telemetry(jwt, device_path, message):
+
+    if type(message) is dict:
+        message = json.dumps(message)
+
     # Encode message as utf-8
     binary_data = message.encode('utf-8')
 
@@ -72,7 +76,10 @@ def main():
     current_jwt = None
 
     # Data is completely arbitrary for button press
-    data = "1"
+    data = {
+        "time": datetime.utcnow().isoformat()
+    }
+    print(data)
 
     # Loop forever, listening for button presses
     while True:
