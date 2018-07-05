@@ -4,8 +4,8 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 var db = admin.firestore();
 
-const TOPIC = '';
-const DEVICE_COLLECTION = '';
+const TOPIC = 'test-topic-name';
+const DEVICE_COLLECTION = 'devices';
 
 exports.pubsubToFirestore = functions.pubsub.topic(TOPIC_NAME).onPublish((message) => {
   console.log('Received message', message);
@@ -22,9 +22,8 @@ exports.pubsubToFirestore = functions.pubsub.topic(TOPIC_NAME).onPublish((messag
 
   // Set data in the document
   db.collection(DEVICE_COLLECTION).doc(deviceId).set({
-    data: {
-      x: data.x,
-      y: data.y,
+    lastMessage: {
+      time: data.time
     }
   }, { merge: true })
   return data;
