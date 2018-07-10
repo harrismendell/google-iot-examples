@@ -1,0 +1,80 @@
+'use strict';
+
+const google = require('googleapis');
+
+const API_VERSION = 'v1';
+const DISCOVERY_API = 'https://cloudiot.googleapis.com/$discovery/rest';
+const discoveryUrl = `${DISCOVERY_API}?version=${API_VERSION}`;
+const PROJECT_CONFIG = {
+  cloudRegion: 'REGION_HERE',
+  deviceId: 'DEVICE_ID',
+  registryId: 'REGISTRY_ID',
+  projectId: 'PROJECT_ID'
+};
+
+
+// From nodejs-docs-samples/iot/manager.js ... with getApplicationDefault creds
+function getClient (serviceAccountJson, cb) {
+  google.auth.getApplicationDefault(function (err, authClient, projectId) {
+    if (err) {
+      console.log('Authentication failed because of ', err);
+      return;
+    }
+
+    google.options({auth: authClient});
+    google.discoverAPI(discoveryUrl, {}, (err, client) => {
+      if (err) {
+        console.log('Error during API discovery', err);
+        return undefined;
+      }
+      cb(client);
+    });
+  });
+}
+
+function setDeviceConfig (client, deviceId, registryId, projectId,
+  cloudRegion, data, version) {
+  const parentName = `projects/${projectId}/locations/${cloudRegion}`;
+  const registryName = `${parentName}/registries/${registryId}`;
+
+  const binaryData = Buffer.from(data).toString('base64');
+  const request = {
+    name: `${registryName}/devices/${deviceId}`,
+    versionToUpdate: version,
+    binaryData: binaryData
+  };
+
+  console.log('Set device config.');
+
+  client.projects.locations.registries.devices.modifyCloudToDeviceConfig(
+    request,
+    (err, data) => {
+      if (err) {
+        console.log('Could not update config:', deviceId);
+        console.log('Message: ', err);
+      } else {
+        console.log('Success :', data);
+      }
+    });
+}
+
+exports.updateDeviceConfig = (req, res) => {
+  // Example input: {"message": "Hello!"}
+  if (req.body.config === undefined) {
+    // This is an error case, as "message" is required.
+    res.status(400).send('No message defined!');
+  } else {
+        const cb = function (client) {
+          setDeviceConfig(client, 
+                          PROJECT_CONFIG.deviceId, //You can move this out of function definition and supply though the http call if you need to test multiple devices
+                          PROJECT_CONFIG.registryId, 
+                          PROJECT_CONFIG.projectId, 
+                          PROJECT_CONFIG.cloudRegion, 
+                          JSON.stringify(req.body.config), //config object in http request body used as config for device
+                          0);
+        };
+
+        getClient(process.env.GOOGLE_APPLICATION_CREDENTIALS, cb);
+        res.status(200).send('Success: ' + req.body.message);
+    }
+};
